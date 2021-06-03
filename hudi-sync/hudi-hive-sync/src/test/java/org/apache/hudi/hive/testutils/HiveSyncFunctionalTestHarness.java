@@ -30,13 +30,18 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class HiveSyncFunctionalTestHarness {
 
@@ -50,6 +55,8 @@ public class HiveSyncFunctionalTestHarness {
   protected boolean initialized = false;
   @TempDir
   protected java.nio.file.Path tempDir;
+  protected List<String> createdHiveTableFullNames = new ArrayList<>();
+  protected List<HoodieHiveClient> createdHiveClients = new ArrayList<>();
 
   public String basePath() {
     return tempDir.toAbsolutePath().toString();
@@ -82,7 +89,7 @@ public class HiveSyncFunctionalTestHarness {
     conf.hivePass = "";
     conf.databaseName = "hivesynctestdb";
     conf.tableName = "hivesynctesttable";
-    conf.basePath = Files.createDirectories(tempDir.resolve("hivesynctestcase-" + Instant.now().toEpochMilli())).toUri().toString();
+    conf.basePath = Files.createDirectories(tempDir.resolve("hivesynctestcase-" + Instant.now().toEpochMilli())).toString();
     conf.assumeDatePartitioning = true;
     conf.usePreApacheInputFormat = false;
     conf.partitionFields = Collections.singletonList("datestr");
@@ -90,28 +97,62 @@ public class HiveSyncFunctionalTestHarness {
   }
 
   public HoodieHiveClient hiveClient(HiveSyncConfig hiveSyncConfig) throws IOException {
+    return hiveClient(hiveSyncConfig, HoodieTableType.COPY_ON_WRITE);
+  }
+
+  public HoodieHiveClient hiveClient(HiveSyncConfig hiveSyncConfig, HoodieTableType tableType) throws IOException {
     HoodieTableMetaClient.withPropertyBuilder()
-        .setTableType(HoodieTableType.COPY_ON_WRITE)
+        .setTableType(tableType)
         .setTableName(hiveSyncConfig.tableName)
         .setPayloadClass(HoodieAvroPayload.class)
         .initTable(hadoopConf, hiveSyncConfig.basePath);
-    return new HoodieHiveClient(hiveSyncConfig, hiveConf(), fs());
+    HoodieHiveClient hiveClient = new HoodieHiveClient(hiveSyncConfig, hiveConf(), fs());
+    createdHiveClients.add(hiveClient);
+    return hiveClient;
+  }
+
+  public HoodieTableMetaClient metaClient(HiveSyncConfig hiveSyncConfig, HoodieTableType tableType) throws IOException {
+    return HoodieTableMetaClient.withPropertyBuilder()
+        .setTableType(tableType)
+        .setTableName(hiveSyncConfig.tableName)
+        .setPayloadClass(HoodieAvroPayload.class)
+        .initTable(hadoopConf(), hiveSyncConfig.basePath);
+  }
+
+  public void createDatabases(String... databases) throws IOException {
+    HiveSyncConfig hiveSyncConfig = hiveSyncConf();
+    HoodieHiveClient hiveClient = hiveClient(hiveSyncConfig);
+    for (String database : databases) {
+      hiveClient.updateHiveSQL("create database if not exists " + database);
+    }
+    hiveClient.close();
   }
 
   public void dropTables(String database, String... tables) throws IOException {
     HiveSyncConfig hiveSyncConfig = hiveSyncConf();
-    hiveSyncConfig.databaseName = database;
+    HoodieHiveClient hiveClient = hiveClient(hiveSyncConfig);
     for (String table : tables) {
-      hiveSyncConfig.tableName = table;
-      hiveClient(hiveSyncConfig).updateHiveSQL("drop table if exists " + table);
+      hiveClient.updateHiveSQL("drop table if exists " + database + "." + table);
     }
+    hiveClient.close();
   }
 
   public void dropDatabases(String... databases) throws IOException {
     HiveSyncConfig hiveSyncConfig = hiveSyncConf();
+    HoodieHiveClient hiveClient = hiveClient(hiveSyncConfig);
     for (String database : databases) {
-      hiveSyncConfig.databaseName = database;
-      hiveClient(hiveSyncConfig).updateHiveSQL("drop database if exists " + database);
+      hiveClient.updateHiveSQL("drop database if exists " + database);
+    }
+    hiveClient.close();
+  }
+
+  public void logHiveTable(HiveSyncConfig hiveSyncConfig) {
+    logHiveTable(hiveSyncConfig.databaseName, hiveSyncConfig.tableName);
+  }
+
+  public void logHiveTable(String databaseName, String... tableNames) {
+    for (String tableName : tableNames) {
+      createdHiveTableFullNames.add(databaseName + "." + tableName);
     }
   }
 
@@ -125,6 +166,20 @@ public class HiveSyncFunctionalTestHarness {
       hiveTestService = new HiveTestService(hadoopConf);
       hiveTestService.start();
     }
+  }
+
+  @AfterEach
+  public void cleanUpCreatedHiveTablesAndClients() throws IOException {
+    HoodieHiveClient hiveClient = hiveClient(hiveSyncConf());
+    Set<String> fullNames = new HashSet<>(createdHiveTableFullNames);
+    for (String fullName : fullNames) {
+      hiveClient.updateHiveSQL("drop table if exists " + fullName);
+    }
+    for (HoodieHiveClient client : createdHiveClients) {
+      client.close();
+    }
+    createdHiveTableFullNames.clear();
+    createdHiveClients.clear();
   }
 
   @AfterAll
