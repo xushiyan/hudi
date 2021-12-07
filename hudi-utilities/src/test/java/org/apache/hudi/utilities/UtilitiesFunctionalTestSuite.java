@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.hudi.utilities.functional;
+package org.apache.hudi.utilities;
 
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.platform.suite.api.IncludeTags;

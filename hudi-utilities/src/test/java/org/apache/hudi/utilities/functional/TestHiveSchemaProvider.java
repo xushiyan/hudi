@@ -18,119 +18,113 @@
 
 package org.apache.hudi.utilities.functional;
 
-import org.apache.avro.Schema;
 import org.apache.hudi.common.config.TypedProperties;
-import org.apache.hudi.common.util.collection.ImmutablePair;
 import org.apache.hudi.common.util.collection.Pair;
-import org.apache.hudi.exception.HoodieException;
+import org.apache.hudi.testutils.SparkClientFunctionalTestHarness;
 import org.apache.hudi.utilities.UtilHelpers;
 import org.apache.hudi.utilities.schema.HiveSchemaProvider;
-import org.apache.hudi.utilities.testutils.SparkClientFunctionalTestHarnessWithHiveSupport;
+import org.apache.hudi.utilities.schema.SchemaProvider;
 import org.apache.hudi.utilities.testutils.UtilitiesTestBase;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.spark.sql.SparkSession;
+
+import org.apache.avro.Schema;
+import org.apache.spark.SparkConf;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.apache.hudi.common.testutils.Assertions.assertStreamEquals;
+import static org.apache.hudi.common.util.CollectionUtils.createImmutableMap;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Basic tests against {@link HiveSchemaProvider}.
  */
 @Tag("functional")
-public class TestHiveSchemaProvider extends SparkClientFunctionalTestHarnessWithHiveSupport {
-  private static final Logger LOG = LogManager.getLogger(TestHiveSchemaProvider.class);
-  private static final TypedProperties PROPS = new TypedProperties();
-  private static final String SOURCE_SCHEMA_TABLE_NAME = "schema_registry.source_schema_tab";
-  private static final String TARGET_SCHEMA_TABLE_NAME = "schema_registry.target_schema_tab";
+public class TestHiveSchemaProvider extends SparkClientFunctionalTestHarness {
+  private static final String DB_NAME = "schema_registry";
+  private static final String SOURCE_TABLE_NAME = "source_schema_tab";
+  private static final String TARGET_TABLE_NAME = "target_schema_tab";
+  private static final String CREATE_TABLE_SQL_TEMPLATE = "CREATE TABLE IF NOT EXISTS `%s`.`%s`(\n"
+      + "`id` BIGINT,\n"
+      + "`name` STRING,\n"
+      + "`num1` INT,\n"
+      + "`num2` BIGINT,\n"
+      + "`num3` DECIMAL(20,0),\n"
+      + "`num4` TINYINT,\n"
+      + "`num5` FLOAT,\n"
+      + "`num6` DOUBLE,\n"
+      + "`bool` BOOLEAN,\n"
+      + "`bin` BINARY\n"
+      + ")";
 
-  @BeforeAll
-  public static void init() {
-    Pair<String, String> dbAndTableName = paresDBAndTableName(SOURCE_SCHEMA_TABLE_NAME);
-    PROPS.setProperty("hoodie.deltastreamer.schemaprovider.source.schema.hive.database", dbAndTableName.getLeft());
-    PROPS.setProperty("hoodie.deltastreamer.schemaprovider.source.schema.hive.table", dbAndTableName.getRight());
+  private TypedProperties props;
+
+  public SparkConf conf() {
+    return conf(Collections.singletonMap("spark.sql.catalogImplementation", "hive"));
   }
 
-  @Disabled
+  @BeforeEach
+  public void initTables() {
+    createSchemaTable(DB_NAME, SOURCE_TABLE_NAME);
+    createSchemaTable(DB_NAME, TARGET_TABLE_NAME);
+    props = new TypedProperties();
+    props.putAll(createImmutableMap(
+        Pair.of("hoodie.deltastreamer.schemaprovider.source.schema.hive.database", DB_NAME),
+        Pair.of("hoodie.deltastreamer.schemaprovider.source.schema.hive.table", SOURCE_TABLE_NAME),
+        Pair.of("hoodie.deltastreamer.schemaprovider.target.schema.hive.database", DB_NAME),
+        Pair.of("hoodie.deltastreamer.schemaprovider.target.schema.hive.table", TARGET_TABLE_NAME)
+    ));
+  }
+
+  @AfterEach
+  public void dropTables() {
+    dropSchemaTable(DB_NAME, SOURCE_TABLE_NAME);
+    dropSchemaTable(DB_NAME, TARGET_TABLE_NAME);
+  }
+
   @Test
-  public void testSourceSchema() throws Exception {
-    try {
-      createSchemaTable(SOURCE_SCHEMA_TABLE_NAME);
-      Schema sourceSchema = UtilHelpers.createSchemaProvider(HiveSchemaProvider.class.getName(), PROPS, jsc()).getSourceSchema();
-
-      Schema originalSchema = new Schema.Parser().parse(
-              UtilitiesTestBase.Helpers.readFile("delta-streamer-config/hive_schema_provider_source.avsc")
-      );
-      for (Schema.Field field : sourceSchema.getFields()) {
-        Schema.Field originalField = originalSchema.getField(field.name());
-        assertTrue(originalField != null);
-      }
-    } catch (HoodieException e) {
-      LOG.error("Failed to get source schema. ", e);
-      throw e;
-    }
+  public void testSourceTargetSchemaEqualToOriginals() throws Exception {
+    SchemaProvider schemaProvider = UtilHelpers.createSchemaProvider(HiveSchemaProvider.class.getName(), props, jsc());
+    Schema sourceSchema = schemaProvider.getSourceSchema();
+    Schema targetSchema = schemaProvider.getTargetSchema();
+    Schema originalSourceSchema = new Schema.Parser().parse(
+        UtilitiesTestBase.Helpers.readFile("delta-streamer-config/hive_schema_provider_source.avsc")
+    );
+    Schema originalTargetSchema = new Schema.Parser().parse(
+        UtilitiesTestBase.Helpers.readFile("delta-streamer-config/hive_schema_provider_target.avsc"));
+    assertStreamEquals(
+        originalSourceSchema.getFields().stream().map(Schema.Field::name),
+        sourceSchema.getFields().stream().map(Schema.Field::name),
+        "schema fields should be matched."
+    );
+    assertStreamEquals(
+        originalTargetSchema.getFields().stream().map(Schema.Field::name),
+        targetSchema.getFields().stream().map(Schema.Field::name),
+        "schema fields should be matched."
+    );
   }
 
-  @Disabled
   @Test
-  public void testTargetSchema() throws Exception {
-    try {
-      Pair<String, String> dbAndTableName = paresDBAndTableName(TARGET_SCHEMA_TABLE_NAME);
-      PROPS.setProperty("hoodie.deltastreamer.schemaprovider.target.schema.hive.database", dbAndTableName.getLeft());
-      PROPS.setProperty("hoodie.deltastreamer.schemaprovider.target.schema.hive.table", dbAndTableName.getRight());
-      createSchemaTable(SOURCE_SCHEMA_TABLE_NAME);
-      createSchemaTable(TARGET_SCHEMA_TABLE_NAME);
-      Schema targetSchema = UtilHelpers.createSchemaProvider(HiveSchemaProvider.class.getName(), PROPS, jsc()).getTargetSchema();
-      Schema originalSchema = new Schema.Parser().parse(
-              UtilitiesTestBase.Helpers.readFile("delta-streamer-config/hive_schema_provider_target.avsc"));
-      for (Schema.Field field : targetSchema.getFields()) {
-        Schema.Field originalField = originalSchema.getField(field.name());
-        assertTrue(originalField != null);
-      }
-    } catch (HoodieException e) {
-      LOG.error("Failed to get source/target schema. ", e);
-      throw e;
-    }
+  public void testMisconfiguredTableShouldThrow() {
+    props.put("hoodie.deltastreamer.schemaprovider.source.schema.hive.table", "non_exist_source_table");
+    Throwable t = assertThrows(IOException.class, () -> UtilHelpers.createSchemaProvider(HiveSchemaProvider.class.getName(), props, jsc()));
+    Throwable rootCause = ((InvocationTargetException) t.getCause().getCause()).getTargetException().getCause();
+    assertEquals(NoSuchTableException.class, rootCause.getClass());
   }
 
-  @Disabled
-  @Test
-  public void testNotExistTable() {
-    String wrongName = "wrong_schema_tab";
-    PROPS.setProperty("hoodie.deltastreamer.schemaprovider.source.schema.hive.table", wrongName);
-    Assertions.assertThrows(NoSuchTableException.class, () -> {
-      try {
-        UtilHelpers.createSchemaProvider(HiveSchemaProvider.class.getName(), PROPS, jsc()).getSourceSchema();
-      } catch (Throwable exception) {
-        while (exception.getCause() != null) {
-          exception = exception.getCause();
-        }
-        throw exception;
-      }
-    });
+  private void createSchemaTable(String dbName, String tableName) {
+    spark().sql(String.format("CREATE DATABASE IF NOT EXISTS %s", dbName));
+    spark().sql(String.format(CREATE_TABLE_SQL_TEMPLATE, dbName, tableName));
   }
 
-  private static Pair<String, String> paresDBAndTableName(String fullName) {
-    String[] dbAndTableName = fullName.split("\\.");
-    if (dbAndTableName.length > 1) {
-      return new ImmutablePair<>(dbAndTableName[0], dbAndTableName[1]);
-    } else {
-      return new ImmutablePair<>("default", dbAndTableName[0]);
-    }
-  }
-
-  private void createSchemaTable(String fullName) throws IOException {
-    SparkSession spark = spark();
-    String createTableSQL = UtilitiesTestBase.Helpers.readFile(String.format("delta-streamer-config/%s.sql", fullName));
-    Pair<String, String> dbAndTableName = paresDBAndTableName(fullName);
-    spark.sql(String.format("CREATE DATABASE IF NOT EXISTS %s", dbAndTableName.getLeft()));
-    spark.sql(createTableSQL);
+  private void dropSchemaTable(String dbName, String tableName) {
+    spark().sql(String.format("DROP TABLE `%s`.`%s`", dbName, tableName));
   }
 }
