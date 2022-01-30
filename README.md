@@ -44,6 +44,17 @@ Hudi supports three types of queries:
 
 Learn more about Hudi at [https://hudi.apache.org](https://hudi.apache.org)
 
+## Compatible Versions
+
+|  Hudi   |        Spark        | Flink | Hive |
+|:-------:|:-------------------:|:-----:|:----:|
+| master  | 2.4.x, 3.1.x, 3.2.x |       |      |
+| 0.10.x  | 2.4.x, 3.0.x, 3.1.x |       |      |
+|  0.9.0  |    2.4.x, 3.0.x     |       |      |
+|  0.8.0  |    2.4.x, 3.0.x     |       |      |
+|  0.7.0  |    2.4.x, 3.0.x     |       |      |
+| <=0.6.0 |        2.4.x        |       |      |
+
 ## Building Apache Hudi from source
 
 Prerequisites for building Apache Hudi:
