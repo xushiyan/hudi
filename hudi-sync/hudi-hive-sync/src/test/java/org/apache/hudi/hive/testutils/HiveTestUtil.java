@@ -90,7 +90,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class HiveTestUtil {
 
   public static final String DB_NAME = "testdb";
-  public static String TABLE_NAME = "test1";
+  public static final String TABLE_NAME = "test1";
   public static String basePath;
   public static TypedProperties hiveSyncProps;
   public static HiveTestService hiveTestService;

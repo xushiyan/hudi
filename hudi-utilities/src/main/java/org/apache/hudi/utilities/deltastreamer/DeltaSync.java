@@ -701,7 +701,7 @@ public class DeltaSync implements Serializable {
 
       for (String impl : syncClientToolClasses) {
         Timer.Context syncContext = metrics.getMetaSyncTimerContext();
-        SyncUtilHelpers.createAndSyncHoodieMeta(impl.trim(), metaProps, conf, fs, cfg.targetBasePath, cfg.baseFileFormat);
+        SyncUtilHelpers.runHoodieMetaSync(impl.trim(), metaProps, conf, fs, cfg.targetBasePath, cfg.baseFileFormat);
         long metaSyncTimeMs = syncContext != null ? syncContext.stop() : 0;
         metrics.updateDeltaStreamerMetaSyncMetrics(getSyncClassShortName(impl), metaSyncTimeMs);
       }

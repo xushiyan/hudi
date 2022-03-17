@@ -21,13 +21,13 @@ import org.apache.hudi.common.config.TypedProperties;
 import org.apache.hudi.exception.HoodieException;
 import org.apache.hudi.sync.common.AbstractSyncTool;
 
-import java.io.IOException;
-import java.util.Properties;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,18 +36,18 @@ public class TestSyncUtilHelpers {
   private static final String BASE_PATH = "/tmp/test";
   private static final String BASE_FORMAT = "PARQUET";
 
-  private static Configuration configuration;
-  private static FileSystem fileSystem;
+  private Configuration configuration;
+  private FileSystem fileSystem;
 
   @BeforeEach
-  public static void setUp() throws IOException {
+  public void setUp() throws IOException {
     configuration = new Configuration();
     fileSystem = FileSystem.get(configuration);
   }
 
   @Test
   public void testCreateValidSyncClass() {
-    AbstractSyncTool validMetaSyncClass = SyncUtilHelpers.createMetaSyncClass(
+    AbstractSyncTool validMetaSyncClass = SyncUtilHelpers.instantiateMetaSyncTool(
         ValidMetaSyncClass.class.getName(),
         new TypedProperties(),
         configuration,
@@ -63,7 +63,7 @@ public class TestSyncUtilHelpers {
     // Ensure it still works for the deprecated constructor of {@link AbstractSyncTool}
     // as we implemented the fallback.
     Properties properties = new Properties();
-    AbstractSyncTool deprecatedMetaSyncClass = SyncUtilHelpers.createMetaSyncClass(
+    AbstractSyncTool deprecatedMetaSyncClass = SyncUtilHelpers.instantiateMetaSyncTool(
         DeprecatedMetaSyncClass.class.getName(),
         new TypedProperties(properties),
         configuration,
@@ -77,7 +77,7 @@ public class TestSyncUtilHelpers {
   @Test
   public void testCreateInvalidSyncClass() {
     Exception exception = assertThrows(HoodieException.class, () -> {
-      SyncUtilHelpers.createMetaSyncClass(
+      SyncUtilHelpers.instantiateMetaSyncTool(
           InvalidSyncClass.class.getName(),
           new TypedProperties(),
           configuration,
