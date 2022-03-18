@@ -42,6 +42,7 @@ import org.apache.hudi.exception.HoodieNotSupportedException;
 import org.apache.hudi.exception.TableNotFoundException;
 import org.apache.hudi.hive.HiveSyncConfig;
 import org.apache.hudi.hive.SlashEncodedDayPartitionValueExtractor;
+import org.apache.hudi.sync.common.HoodieSyncConfig;
 import org.apache.hudi.table.BulkInsertPartitioner;
 import org.apache.hudi.util.DataTypeUtils;
 
@@ -270,8 +271,10 @@ public class DataSourceUtils {
     return dropDuplicates(jssc, incomingHoodieRecords, writeConfig);
   }
 
-  /** @deprecated Use {@link HiveSyncConfig} constructor directly and provide the props,
-   * and set  {@link HoodieSyncConfig.META_SYNC_BASE_PATH} and {@link HoodieSyncConfig.META_SYNC_BASE_FILE_FORMAT}*/
+  /**
+   * @deprecated Use {@link HiveSyncConfig} constructor directly and provide the props,
+   * and set {@link HoodieSyncConfig#META_SYNC_BASE_PATH} and {@link HoodieSyncConfig#META_SYNC_BASE_FILE_FORMAT} instead.
+   */
   @Deprecated
   public static HiveSyncConfig buildHiveSyncConfig(TypedProperties props, String basePath, String baseFileFormat) {
     checkRequiredProperties(props, Collections.singletonList(DataSourceWriteOptions.HIVE_TABLE().key()));

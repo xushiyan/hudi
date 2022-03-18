@@ -48,8 +48,8 @@ public class SyncUtilHelpers {
                                                  String baseFileFormat) {
     TypedProperties properties = new TypedProperties();
     properties.putAll(props);
-    properties.put(HoodieSyncConfig.META_SYNC_BASE_PATH, targetBasePath);
-    properties.put(HoodieSyncConfig.META_SYNC_BASE_FILE_FORMAT, baseFileFormat);
+    properties.put(HoodieSyncConfig.META_SYNC_BASE_PATH.key(), targetBasePath);
+    properties.put(HoodieSyncConfig.META_SYNC_BASE_FILE_FORMAT.key(), baseFileFormat);
 
     try {
       return ((AbstractSyncTool) ReflectionUtils.loadClass(metaSyncFQCN,
@@ -57,10 +57,12 @@ public class SyncUtilHelpers {
           properties, hadoopConfig, fs));
     } catch (HoodieException e) {
       // fallback to old interface
-      return ((AbstractSyncTool) ReflectionUtils.loadClass(metaSyncFQCN,
-          new Class<?>[] {Properties.class, FileSystem.class}, properties, fs));
-    } catch (Throwable e) {
-      throw new HoodieException("Could not load meta sync class " + metaSyncFQCN, e);
+      try {
+        return ((AbstractSyncTool) ReflectionUtils.loadClass(metaSyncFQCN,
+            new Class<?>[] {Properties.class, FileSystem.class}, properties, fs));
+      } catch (Throwable t) {
+        throw new HoodieException("Could not load meta sync class " + metaSyncFQCN, t);
+      }
     }
   }
 }
