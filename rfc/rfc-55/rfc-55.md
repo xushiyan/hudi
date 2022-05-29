@@ -16,14 +16,13 @@
 -->
 # RFC-55: Improve Hive/Meta sync class design and hierachies
 
-
-
 ## Proposers
 
 - @<proposer1 @fengjian428>
 - @<proposer2 @xushiyan>
 
 ## Approvers
+
  - @<approver1 @vinothchandar>
  - @<approver2 @codope>
 
@@ -31,22 +30,90 @@
 
 JIRA: [HUDI-3730](https://issues.apache.org/jira/browse/HUDI-3730)
 
-
 ## Abstract
+
 ![ArchitectureMetaSync.png](ArchitectureMetaSync.png)
+
 Hudi now can sync meta to various Catalogs if user has need, and user can sync meta in different framework such as Spark, Flink, and Kafka connect. 
 The current situation is:
+
 * The way to generate Sync configs are inconsistent in different framework;
-* what's more, the abstraction of SyncClasses was designed for HiveSync, there are some duplicated code, useless method, parameters and config for new Catalogs, it needs to be improved. 
+* The abstraction of SyncClasses was designed for HiveSync, there are some duplicated code, useless method, parameters and config for new Catalogs, it needs to be improved. 
  
 That being said, we need a standard way to call meta sync. We also need a unified abstraction of XXXSyncTool , XXXSyncClient and XXXSyncConfig to handle all supported meta sync, including hms, bigquery, datahub, etc
 
-
 ## Implementation
-![classDesigh.png](classDesigh.png)
+
+![classDesign.png](classDesign.png)
+
 * for the engines which need use MetaSync, should implement _SupportMetaSync_ on the sync classes, such as DeltaSync, KafkaConnectTransactionServices and etc. for example: `runMetaSync();` then will sync metadata by every SyncToolClasses which indicated in config
 * redesign AbstractSyncClient and AbstractSyncTool, add Catalog Interface. make the hierarchy of classes more clearly and more precisely 
 * unify the way to generate SyncConfig and the way to call SyncTool，remove some useless parameters
+
+### `HoodieSyncTool`
+
+*Renamed from `AbstractSyncTool`.*
+
+```java
+public abstract class HoodieSyncTool implements AutoCloseable {
+
+  protected HoodieSyncClient syncClient;
+
+  public HoodieSyncTool(HoodieSyncConfig syncConfig); // preferred constructor.
+
+  public abstract void syncHoodieTable();
+
+  public static void main(String[] args) {
+     // instantiate HoodieSyncConfig and concrete sync tool, and run sync.
+  }
+}
+```
+
+### `HoodieSyncConfig`
+
+```java
+public class HoodieSyncConfig extends HoodieConfig {
+
+  public static class HoodieSyncConfigParams {
+    // POJO class to take command line parameters
+    @Parameter()
+    private String basePath; // common essential parameters
+
+    public Properties toProps();
+  }
+
+  public HoodieSyncConfig(Properties props);
+}
+
+public class HiveSyncConfig extends HoodieSyncConfig {
+
+  public static class HiveSyncConfigParams {
+
+    @Parameter()
+    private String syncMode;
+
+    // delegate common parameters to other XXXParams class
+    // this overcomes single-inheritance's inconvenience
+    // see https://jcommander.org/#_parameter_delegates
+    @ParametersDelegate()
+    private HoodieSyncConfigParams hoodieSyncConfigParams = new HoodieSyncConfigParams();
+
+    public Properties toProps();
+  }
+
+  public HoodieSyncConfig(Properties props);
+}
+```
+
+### `HoodieSyncClient`
+
+*Renamed from `AbstractSyncHoodieClient`.*
+
+```java
+public abstract class HoodieSyncClient implements AutoCloseable {
+  // metastore-agnostic APIs
+}
+```
 
 ## Rollout/Adoption Plan
 
