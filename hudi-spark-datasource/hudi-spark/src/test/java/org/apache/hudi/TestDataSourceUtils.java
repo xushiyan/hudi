@@ -30,7 +30,6 @@ import org.apache.hudi.config.HoodieClusteringConfig;
 import org.apache.hudi.config.HoodieWriteConfig;
 import org.apache.hudi.exception.HoodieException;
 import org.apache.hudi.execution.bulkinsert.RDDCustomColumnsSortPartitioner;
-import org.apache.hudi.hive.HiveSyncConfig;
 import org.apache.hudi.table.BulkInsertPartitioner;
 
 import org.apache.avro.Conversions;
@@ -52,7 +51,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -66,18 +64,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.hudi.DataSourceUtils.mayBeOverwriteParquetWriteLegacyFormatProp;
-import static org.apache.hudi.common.model.HoodieFileFormat.PARQUET;
-import static org.apache.hudi.hive.ddl.HiveSyncMode.HMS;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -246,29 +239,6 @@ public class TestDataSourceUtils {
       prop.putAll(params);
       assertEquals(pair.right, HoodieClusteringConfig.from(prop).isAsyncClusteringEnabled());
     });
-  }
-
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void testBuildHiveSyncConfig(boolean useSyncMode) {
-    TypedProperties props = new TypedProperties();
-    if (useSyncMode) {
-      props.setProperty(DataSourceWriteOptions.HIVE_SYNC_MODE().key(), HMS.name());
-      props.setProperty(DataSourceWriteOptions.HIVE_USE_JDBC().key(), String.valueOf(false));
-    }
-    props.setProperty(DataSourceWriteOptions.HIVE_DATABASE().key(), HIVE_DATABASE);
-    props.setProperty(DataSourceWriteOptions.HIVE_TABLE().key(), HIVE_TABLE);
-    HiveSyncConfig hiveSyncConfig = DataSourceUtils.buildHiveSyncConfig(props, config.getBasePath(), PARQUET.name());
-
-    if (useSyncMode) {
-      assertFalse(hiveSyncConfig.getBoolean(HiveSyncConfig.HIVE_USE_JDBC));
-      assertEquals(HMS.name(), hiveSyncConfig.getString(HiveSyncConfig.HIVE_SYNC_MODE));
-    } else {
-      assertTrue(hiveSyncConfig.getBoolean(HiveSyncConfig.HIVE_USE_JDBC));
-      assertNull(hiveSyncConfig.getString(HiveSyncConfig.HIVE_SYNC_MODE));
-    }
-    assertEquals(HIVE_DATABASE, hiveSyncConfig.getString(HiveSyncConfig.META_SYNC_DATABASE_NAME));
-    assertEquals(HIVE_TABLE, hiveSyncConfig.getString(HiveSyncConfig.META_SYNC_TABLE_NAME));
   }
 
   private void setAndVerifyHoodieWriteClientWith(final String partitionerClassName) {
