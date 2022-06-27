@@ -16,30 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.hudi.hive.ddl;
+package org.apache.hudi.hive;
 
 import java.util.Locale;
 
-public enum HiveSyncMode {
+public enum HiveSyncCoverage {
 
   /**
-   * The HMS mode use the hive meta client to sync metadata.
+   * Hive to perform a full coverage sync (PARTITION + SCHEMA)
    */
-  HMS,
+  FULL,
   /**
-   * The GLUE mode use the glue client to sync metadata.
+   * Hive to only sync SCHEMA metadata
    */
-  GLUE,
-  /**
-   * The HIVEQL mode execute hive ql to sync metadata.
-   */
-  HIVEQL,
-  /**
-   * The JDBC mode use hive jdbc to sync metadata.
-   */
-  JDBC;
+  SCHEMA;
 
-  public static HiveSyncMode of(String syncMode) {
-    return HiveSyncMode.valueOf(syncMode.toUpperCase(Locale.ROOT));
+  public static HiveSyncCoverage of(String syncCoverage) {
+    // Any invalid values will throw an illegal argument exception
+    return HiveSyncCoverage.valueOf(syncCoverage.toUpperCase(Locale.ROOT));
   }
 }

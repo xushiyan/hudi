@@ -125,4 +125,9 @@ public class HiveSyncConfigHolder {
       .key("hoodie.datasource.hive_sync.sync_comment")
       .defaultValue("false")
       .withDocumentation("Whether to sync the table column comments while syncing the table.");
+  public static final ConfigProperty<String> HIVE_SYNC_COVERAGE = ConfigProperty
+      .key("hoodie.datasource.hive_sync.coverage")
+      .defaultValue("full")
+      .withDocumentation("The hive sync coverage to perform. Valid values are full and schema."
+              + "The default value is full.");
 }

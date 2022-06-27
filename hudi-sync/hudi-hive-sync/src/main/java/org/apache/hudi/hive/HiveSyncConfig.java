@@ -39,6 +39,7 @@ import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_AS_DATA_SOURCE
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_BUCKET_SYNC;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_BUCKET_SYNC_SPEC;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_COMMENT;
+import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_COVERAGE;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_MODE;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_SCHEMA_STRING_LENGTH_THRESHOLD;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_TABLE_PROPERTIES;
@@ -129,6 +130,8 @@ public class HiveSyncConfig extends HoodieSyncConfig {
     public String bucketSpec;
     @Parameter(names = {"--sync-comment"}, description = "synchronize table comments to hive")
     public Boolean syncComment;
+    @Parameter(names = {"--sync-coverage"}, description = "Hive sync coverage, full/schema")
+    public String syncCoverage;
     @Parameter(names = {"--with-operation-field"}, description = "Whether to include the '_hoodie_operation' field in the metadata fields")
     public Boolean withOperationField; // TODO remove this as it's not used
 
@@ -158,6 +161,7 @@ public class HiveSyncConfig extends HoodieSyncConfig {
       props.setPropertyIfNonNull(HIVE_SYNC_BUCKET_SYNC.key(), bucketSync);
       props.setPropertyIfNonNull(HIVE_SYNC_BUCKET_SYNC_SPEC.key(), bucketSpec);
       props.setPropertyIfNonNull(HIVE_SYNC_COMMENT.key(), syncComment);
+      props.setPropertyIfNonNull(HIVE_SYNC_COVERAGE.key(), syncCoverage);
       return props;
     }
   }
