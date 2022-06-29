@@ -51,6 +51,7 @@ import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SKIP_RO_SUFFIX_FOR_
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SUPPORT_TIMESTAMP_TYPE;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_AS_DATA_SOURCE_TABLE;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_COMMENT;
+import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_COVERAGE;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_SYNC_SCHEMA_STRING_LENGTH_THRESHOLD;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_TABLE_PROPERTIES;
 import static org.apache.hudi.hive.HiveSyncConfigHolder.HIVE_TABLE_SERDE_PROPERTIES;
@@ -136,7 +137,6 @@ public class HiveSyncTool extends HoodieSyncTool implements AutoCloseable {
             + tableId(databaseName, tableName) + "). Hive metastore URL :"
             + config.getString(METASTORE_URIS) + ", basePath :"
             + config.getString(META_SYNC_BASE_PATH));
-
         doSync();
       }
     } catch (RuntimeException re) {
@@ -214,10 +214,17 @@ public class HiveSyncTool extends HoodieSyncTool implements AutoCloseable {
       config.setValue(HIVE_SYNC_AS_DATA_SOURCE_TABLE, "false");
     }
 
-    // Sync schema if needed
-    boolean schemaChanged = syncSchema(tableName, tableExists, useRealtimeInputFormat, readAsOptimized, schema);
+    HiveSyncCoverage syncCoverage = HiveSyncCoverage.of(config.getStringOrDefault(HIVE_SYNC_COVERAGE));
 
-    LOG.info("Schema sync complete. Syncing partitions for " + tableName);
+    // Sync schema if needed
+    boolean isSyncSchema = syncCoverage.equals(HiveSyncCoverage.FULL) || syncCoverage.equals(HiveSyncCoverage.SCHEMA);
+    boolean schemaChanged = false;
+    if (isSyncSchema) {
+      LOG.info("Syncing schema for " + tableName);
+      schemaChanged = syncSchema(tableName, tableExists, useRealtimeInputFormat, readAsOptimized, schema);
+      LOG.info("Schema sync complete.");
+    }
+
     // Get the last time we successfully synced partitions
     Option<String> lastCommitTimeSynced = Option.empty();
     if (tableExists) {
@@ -228,7 +235,14 @@ public class HiveSyncTool extends HoodieSyncTool implements AutoCloseable {
     LOG.info("Storage partitions scan complete. Found " + writtenPartitionsSince.size());
 
     // Sync the partitions if needed
-    boolean partitionsChanged = syncPartitions(tableName, writtenPartitionsSince, isDropPartition);
+    boolean isSyncPartition = syncCoverage.equals(HiveSyncCoverage.FULL);
+    boolean partitionsChanged = false;
+    if (isSyncPartition) {
+      LOG.info("Syncing partitions for " + tableName);
+      partitionsChanged = syncPartitions(tableName, writtenPartitionsSince, isDropPartition);
+      LOG.info("Partition sync complete. Syncing partitions for " + tableName);
+    }
+
     boolean meetSyncConditions = schemaChanged || partitionsChanged;
     if (!config.getBoolean(META_SYNC_CONDITIONAL_SYNC) || meetSyncConditions) {
       syncClient.updateLastCommitTimeSynced(tableName);

@@ -1128,6 +1128,33 @@ public class TestHiveSyncTool {
     assertEquals(commitTime1, hiveClient.getLastCommitTimeSynced(tableName).get());
   }
 
+  @ParameterizedTest
+  @MethodSource("syncMode")
+  public void testPartitionCreationWithoutPartitionSync(String syncMode) throws Exception {
+    hiveSyncProps.setProperty(HiveSyncConfigHolder.HIVE_SYNC_MODE.key(), syncMode);
+    hiveSyncProps.setProperty(HiveSyncConfigHolder.HIVE_SYNC_COVERAGE.key(), "schema");
+
+    String instantTime = "100";
+    HiveTestUtil.createCOWTable(instantTime, 1, true);
+
+    reinitHiveSyncClient();
+    assertFalse(hiveClient.tableExists(HiveTestUtil.TABLE_NAME),
+            "Table " + HiveTestUtil.TABLE_NAME + " should not exist initially");
+    // Lets do the sync
+    reSyncHiveTable();
+    assertTrue(hiveClient.tableExists(HiveTestUtil.TABLE_NAME),
+            "Table " + HiveTestUtil.TABLE_NAME + " should exist after sync completes");
+    assertEquals(hiveClient.getMetastoreSchema(HiveTestUtil.TABLE_NAME).size(),
+            hiveClient.getStorageSchema().getColumns().size() + 1,
+            "Hive Schema should match the table schema + partition field");
+    // Partitions will not be synced, should remain as 0
+    List<Partition> partitions = hiveClient.scanTablePartitions(HiveTestUtil.TABLE_NAME);
+    assertEquals(0, partitions.size(),
+            "Table partitions should match the number of partitions we wrote");
+    assertEquals(instantTime, hiveClient.getLastCommitTimeSynced(HiveTestUtil.TABLE_NAME).get(),
+            "The last commit that was synced should be updated in the TBLPROPERTIES");
+  }
+
   private void reSyncHiveTable() {
     hiveSyncTool.syncHoodieTable();
     // we need renew the hiveclient after tool.syncHoodieTable(), because it will close hive
