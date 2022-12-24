@@ -1,4 +1,4 @@
-org.apache.hudi:hudi-flink1.15-bundle:0.12.1:compile
+org.apache.hudi:hudi-flink1.15-bundle:0.12.2-rc1:compile
 +- org.apache.hive:hive-service:2.3.1:provided
 |  +- org.apache.hive:hive-service-rpc:2.3.1:provided
 |  +- org.apache.hive:hive-llap-server:2.3.1:provided
@@ -172,8 +172,8 @@ org.apache.hudi:hudi-flink1.15-bundle:0.12.1:compile
 +- org.datanucleus:datanucleus-core:5.0.1:provided
 +- org.datanucleus:datanucleus-api-jdo:5.0.1:provided
 +- org.apache.thrift:libfb303:0.9.3:provided
-\- org.apache.orc:orc-core:1.7.4:provided
-   +- org.apache.orc:orc-shims:1.7.4:provided
-   +- io.airlift:aircompressor:0.21:provided
-   +- org.jetbrains:annotations:17.0.0:provided
-   \- org.threeten:threeten-extra:1.5.0:provided
+\- org.apache.orc:orc-core:1.6.0:provided
+   +- org.apache.orc:orc-shims:1.6.0:provided
+   +- io.airlift:aircompressor:0.15:provided
+   +- javax.xml.bind:jaxb-api:2.2.11:provided
+   \- org.jetbrains:annotations:17.0.0:provided
