@@ -1,5 +1,5 @@
-org.apache.hudi:hudi-presto-bundle:0.12.1:compile
-+- org.apache.hudi:hudi-common:0.12.1:compile
+org.apache.hudi:hudi-presto-bundle:0.12.2-rc1:compile
++- org.apache.hudi:hudi-common:0.12.2-rc1:compile
 |  +- org.openjdk.jol:jol-core:0.16:compile
 |  +- com.fasterxml.jackson.core:jackson-annotations:2.6.7:compile
 |  +- com.fasterxml.jackson.core:jackson-databind:2.6.7.3:compile
@@ -124,9 +124,8 @@ org.apache.hudi:hudi-presto-bundle:0.12.1:compile
 |  |     +- commons-daemon:commons-daemon:1.0.13:provided
 |  |     \- org.fusesource.leveldbjni:leveldbjni-all:1.8:provided
 |  \- org.lz4:lz4-java:1.8.0:compile
-+- org.apache.hudi:hudi-hadoop-mr-bundle:0.12.1:compile
-|  +- org.apache.hudi:hudi-hadoop-mr:0.12.1:compile
-|  \- org.apache.parquet:parquet-hadoop-bundle:1.10.1:compile
++- org.apache.hudi:hudi-hadoop-mr-bundle:0.12.2-rc1:compile
+|  \- org.apache.hudi:hudi-hadoop-mr:0.12.2-rc1:compile
 +- org.apache.parquet:parquet-avro:1.10.1:compile
 |  +- org.apache.parquet:parquet-column:1.10.1:compile
 |  |  +- org.apache.parquet:parquet-common:1.10.1:compile
@@ -147,4 +146,4 @@ org.apache.hudi:hudi-presto-bundle:0.12.1:compile
 +- com.google.guava:guava:12.0.1:compile
 |  \- com.google.code.findbugs:jsr305:1.3.9:compile
 +- commons-lang:commons-lang:2.6:compile
-\- com.google.protobuf:protobuf-java:3.17.3:compile
+\- com.google.protobuf:protobuf-java:3.21.5:compile

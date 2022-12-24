@@ -45,10 +45,10 @@ declare -a ARTIFACT_IDS=(
 "hudi-utilities-slim-bundle_2.12"
 )
 
-VERSION=0.12.1
+VERSION=0.12.2-rc1
 for aid in "${ARTIFACT_IDS[@]}"
 do
-  mvn \
+  mvn -s scripts/release/m2settings-apachestaging.xml \
   com.github.ferstl:depgraph-maven-plugin:4.0.2:for-artifact \
   -DgraphFormat=text -DshowGroupIds=true -DshowVersions=true -DrepeatTransitiveDependenciesInTextGraph \
   -DoutputDirectory=packaging -DoutputFileName=$aid.deptree.txt \

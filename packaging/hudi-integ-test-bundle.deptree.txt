@@ -1,12 +1,12 @@
-org.apache.hudi:hudi-integ-test-bundle:0.12.1:compile
+org.apache.hudi:hudi-integ-test-bundle:0.12.2-rc1:compile
 +- com.fasterxml.jackson.module:jackson-module-scala_2.12:2.10.0:compile
 |  +- org.scala-lang:scala-library:2.12.10:compile
 |  +- com.fasterxml.jackson.core:jackson-core:2.6.7:compile
 |  +- com.fasterxml.jackson.core:jackson-annotations:2.6.7:compile
 |  +- com.fasterxml.jackson.core:jackson-databind:2.6.7.3:compile
 |  \- com.fasterxml.jackson.module:jackson-module-paranamer:2.10.0:compile
-+- org.apache.hudi:hudi-client-common:0.12.1:test
-|  +- org.apache.hudi:hudi-common:0.12.1:test
++- org.apache.hudi:hudi-client-common:0.12.2-rc1:test
+|  +- org.apache.hudi:hudi-common:0.12.2-rc1:test
 |  |  +- org.openjdk.jol:jol-core:0.16:test
 |  |  +- com.github.ben-manes.caffeine:caffeine:2.9.1:test
 |  |  |  +- org.checkerframework:checker-qual:3.10.0:test
@@ -50,7 +50,7 @@ org.apache.hudi:hudi-integ-test-bundle:0.12.1:compile
 |  |     +- com.lmax:disruptor:3.4.2:test
 |  |     +- org.apache.hadoop:hadoop-distcp:2.10.0:test
 |  |     \- org.apache.hadoop:hadoop-hdfs:2.10.1:provided
-|  +- org.apache.hudi:hudi-timeline-service:0.12.1:test
+|  +- org.apache.hudi:hudi-timeline-service:0.12.2-rc1:test
 |  |  +- io.javalin:javalin:4.6.7:test
 |  |  |  +- org.eclipse.jetty:jetty-server:9.4.48.v20220622:test
 |  |  |  |  +- javax.servlet:javax.servlet-api:3.1.0:test
@@ -87,9 +87,9 @@ org.apache.hudi:hudi-integ-test-bundle:0.12.1:compile
 |  +- org.apache.curator:curator-framework:2.7.1:compile
 |  +- org.apache.curator:curator-client:2.7.1:compile
 |  \- org.apache.curator:curator-recipes:2.7.1:compile
-+- org.apache.hudi:hudi-spark-client:0.12.1:test
++- org.apache.hudi:hudi-spark-client:0.12.2-rc1:test
 |  +- org.scala-lang.modules:scala-collection-compat_2.11:2.8.1:test
-|  \- org.apache.hudi:hudi-client-common:0.12.1:test
+|  \- org.apache.hudi:hudi-client-common:0.12.2-rc1:test
 +- org.apache.hadoop:hadoop-hdfs:2.10.1:test
 |  +- org.apache.hadoop:hadoop-hdfs-client:2.10.1:provided
 |  |  \- com.squareup.okhttp:okhttp:2.7.5:provided
