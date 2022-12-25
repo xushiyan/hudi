@@ -1,4 +1,4 @@
-org.apache.hudi:hudi-kafka-connect-bundle:0.12.2-rc1:compile
+org.apache.hudi:hudi-kafka-connect-bundle:0.12.2:compile
 +- org.apache.avro:avro:1.8.2:compile
 |  +- org.codehaus.jackson:jackson-core-asl:1.9.13:compile
 |  +- org.codehaus.jackson:jackson-mapper-asl:1.9.13:compile

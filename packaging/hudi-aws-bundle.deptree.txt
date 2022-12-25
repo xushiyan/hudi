@@ -1,5 +1,5 @@
-org.apache.hudi:hudi-aws-bundle:0.12.2-rc1:compile
-+- org.apache.hudi:hudi-common:0.12.2-rc1:compile
+org.apache.hudi:hudi-aws-bundle:0.12.2:compile
++- org.apache.hudi:hudi-common:0.12.2:compile
 |  +- org.openjdk.jol:jol-core:0.16:compile
 |  +- com.fasterxml.jackson.core:jackson-annotations:2.6.7:compile
 |  +- com.fasterxml.jackson.core:jackson-databind:2.6.7.3:compile
@@ -77,11 +77,11 @@ org.apache.hudi:hudi-aws-bundle:0.12.2-rc1:compile
 |  |  +- org.jamon:jamon-runtime:2.4.1:compile
 |  |  \- com.lmax:disruptor:3.4.2:compile
 |  \- org.lz4:lz4-java:1.8.0:compile
-+- org.apache.hudi:hudi-hive-sync:0.12.2-rc1:compile
-|  +- org.apache.hudi:hudi-hadoop-mr:0.12.2-rc1:compile
-|  +- org.apache.hudi:hudi-sync-common:0.12.2-rc1:compile
++- org.apache.hudi:hudi-hive-sync:0.12.2:compile
+|  +- org.apache.hudi:hudi-hadoop-mr:0.12.2:compile
+|  +- org.apache.hudi:hudi-sync-common:0.12.2:compile
 |  \- com.beust:jcommander:1.78:compile
-+- org.apache.hudi:hudi-aws:0.12.2-rc1:compile
++- org.apache.hudi:hudi-aws:0.12.2:compile
 |  +- com.amazonaws:dynamodb-lock-client:1.1.0:compile
 |  +- com.amazonaws:aws-java-sdk-cloudwatch:1.12.22:compile
 |  |  \- com.amazonaws:jmespath-java:1.12.22:compile

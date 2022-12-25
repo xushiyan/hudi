@@ -1,4 +1,4 @@
-org.apache.hudi:hudi-timeline-server-bundle:0.12.2-rc1:compile
+org.apache.hudi:hudi-timeline-server-bundle:0.12.2:compile
 +- org.apache.hadoop:hadoop-hdfs:2.10.1:provided
 |  +- org.apache.hadoop:hadoop-hdfs-client:2.10.1:provided
 |  |  \- com.squareup.okhttp:okhttp:2.7.5:provided
