@@ -1,4 +1,4 @@
-org.apache.hudi:hudi-spark3-bundle_2.12:0.12.2-rc1:compile
+org.apache.hudi:hudi-spark3-bundle_2.12:0.12.2:compile
 +- org.apache.hive:hive-service:2.3.1:provided
 |  +- org.apache.hive:hive-exec:2.3.1:provided
 |  |  +- org.apache.hive:hive-vector-code-gen:2.3.1:provided
