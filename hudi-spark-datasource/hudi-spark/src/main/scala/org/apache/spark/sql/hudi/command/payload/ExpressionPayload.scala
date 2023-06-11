@@ -233,6 +233,10 @@ class ExpressionPayload(@transient record: GenericRecord,
   }
 
   override def getInsertValue(schema: Schema, properties: Properties): HOption[IndexedRecord] = {
+    if (properties.getProperty(PAYLOAD_SKIP_PROCESSING_INSERT_VALUE, "false").toBoolean) {
+      return HOption.of(bytesToAvro(recordBytes, schema))
+    }
+
     val recordSchema = getRecordSchema(properties)
     val incomingRecord = ConvertibleRecord(bytesToAvro(recordBytes, recordSchema))
 
@@ -317,6 +321,8 @@ object ExpressionPayload {
    * and target (existing) tables
    */
   val PAYLOAD_EXPECTED_COMBINED_SCHEMA = "hoodie.payload.combined.schema"
+
+  val PAYLOAD_SKIP_PROCESSING_INSERT_VALUE = "hoodie.payload.skip.processing.insert_value"
 
   /**
    * Internal property determining whether combined schema should be validated by [[ExpressionPayload]],

@@ -76,6 +76,7 @@ public class HoodieAvroRecordMerger implements HoodieRecordMerger {
   }
 
   private Option<HoodieRecord> combineAndGetUpdateValue(HoodieRecord older, HoodieRecord newer, Schema schema, Properties props) throws IOException {
+    props.put("hoodie.payload.skip.processing.insert_value", "true");
     Option<IndexedRecord> previousAvroData = older.toIndexedRecord(schema, props).map(HoodieAvroIndexedRecord::getData);
     if (!previousAvroData.isPresent()) {
       return Option.empty();

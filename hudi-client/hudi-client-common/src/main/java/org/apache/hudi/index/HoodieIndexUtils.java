@@ -19,6 +19,7 @@
 package org.apache.hudi.index;
 
 import org.apache.hudi.avro.HoodieAvroUtils;
+import org.apache.hudi.common.config.TypedProperties;
 import org.apache.hudi.common.data.HoodieData;
 import org.apache.hudi.common.engine.HoodieEngineContext;
 import org.apache.hudi.common.fs.FSUtils;
@@ -239,11 +240,22 @@ public class HoodieIndexUtils {
     // after prepend the meta fields, convert the record back to the original payload
     HoodieRecord incomingWithMetaFields = incomingPrepended
         .wrapIntoHoodieRecordPayloadWithParams(writeSchema, config.getProps(), Option.empty(), config.allowOperationMetadataField(), Option.empty(), false, Option.empty());
-    Option<Pair<HoodieRecord, Schema>> mergeResult = config.getRecordMerger()
-        .merge(existing, existingSchema, incomingWithMetaFields, writeSchemaWithMetaFields, config.getProps());
+    boolean mergeWithoutMetaFields = true;
+    Option<Pair<HoodieRecord, Schema>> mergeResult;
+    if (mergeWithoutMetaFields) {
+      mergeResult = config.getRecordMerger()
+          .merge(existing, existingSchema, incoming, writeSchemaWithMetaFields, config.getProps());
+    } else {
+      mergeResult = config.getRecordMerger()
+          .merge(existing, existingSchema, incomingWithMetaFields, writeSchemaWithMetaFields, config.getProps());
+    }
     if (mergeResult.isPresent()) {
       // the merged record needs to be converted back to the original payload
-      HoodieRecord<R> merged = mergeResult.get().getLeft().wrapIntoHoodieRecordPayloadWithParams(
+      // ? need to derive record key as no meta fields
+      HoodieRecord rawMergedRecord = mergeResult.get().getLeft();
+      HoodieRecord<R> merged = rawMergedRecord
+          .prependMetaFields(writeSchema, writeSchemaWithMetaFields, new MetadataValues().setRecordKey(incoming.getRecordKey()).setPartitionPath(incoming.getPartitionPath()), config.getProps())
+          .wrapIntoHoodieRecordPayloadWithParams(
           writeSchemaWithMetaFields, config.getProps(), Option.empty(),
           config.allowOperationMetadataField(), Option.empty(), false, Option.of(writeSchema));
       return Option.of(merged);
