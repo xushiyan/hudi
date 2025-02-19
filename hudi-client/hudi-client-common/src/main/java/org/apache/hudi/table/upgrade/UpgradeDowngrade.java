@@ -63,6 +63,11 @@ public class UpgradeDowngrade {
     this.upgradeDowngradeHelper = upgradeDowngradeHelper;
   }
 
+  public static boolean needsUpgradeOrDowngrade(HoodieTableMetaClient metaClient) {
+    HoodieTableVersion fromVersion = metaClient.getTableConfig().getTableVersion();
+    return HoodieTableVersion.current().versionCode() != fromVersion.versionCode();
+  }
+
   public boolean needsUpgradeOrDowngrade(HoodieTableVersion toVersion) {
     HoodieTableVersion fromVersion = metaClient.getTableConfig().getTableVersion();
     // Ensure versions are same

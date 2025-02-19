@@ -108,6 +108,7 @@ import static org.apache.hudi.avro.AvroSchemaUtils.getAvroRecordQualifiedName;
 import static org.apache.hudi.common.model.HoodieCommitMetadata.SCHEMA_KEY;
 import static org.apache.hudi.common.util.StringUtils.getUTF8Bytes;
 import static org.apache.hudi.metadata.HoodieTableMetadata.getMetadataTableBasePath;
+import static org.apache.hudi.table.upgrade.UpgradeDowngrade.needsUpgradeOrDowngrade;
 
 /**
  * Abstract Write Client providing functionality for performing commit, index updates and rollback
@@ -1237,6 +1238,10 @@ public abstract class BaseHoodieWriteClient<T, I, K, O> extends BaseHoodieClient
     Option<HoodieInstant> ownerInstant = Option.empty();
     if (instantTime.isPresent()) {
       ownerInstant = Option.of(new HoodieInstant(true, CommitUtils.getCommitActionType(operationType, metaClient.getTableType()), instantTime.get()));
+    }
+    boolean requiresInitTable = needsUpgradeOrDowngrade(metaClient) || config.isMetadataTableEnabled();
+    if (!requiresInitTable) {
+      return;
     }
     this.txnManager.beginTransaction(ownerInstant, Option.empty());
     try {
