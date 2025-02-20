@@ -40,7 +40,7 @@ public class DataHubSyncTool extends HoodieSyncTool {
 
   public DataHubSyncTool(Properties props) {
     super(props);
-    this.config = new DataHubSyncConfig(props);
+    this.config = new DataHubSyncConfig(this.props);
   }
 
   /**
