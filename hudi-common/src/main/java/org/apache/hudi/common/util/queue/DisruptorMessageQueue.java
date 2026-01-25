@@ -23,7 +23,7 @@ import org.apache.hudi.common.util.Option;
 import org.apache.hudi.common.util.ValidationUtils;
 import org.apache.hudi.exception.HoodieException;
 
-import com.lmax.disruptor.EventTranslator;
+import com.lmax.disruptor.EventTranslatorOneArg;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.TimeoutException;
 import com.lmax.disruptor.WaitStrategy;
@@ -45,6 +45,10 @@ import java.util.function.Function;
 public class DisruptorMessageQueue<I, O> implements HoodieMessageQueue<I, O> {
 
   private static final Logger LOG = LoggerFactory.getLogger(DisruptorMessageQueue.class);
+
+  @SuppressWarnings("rawtypes")
+  private static final EventTranslatorOneArg<HoodieDisruptorEvent, Object> EVENT_TRANSLATOR =
+      (event, sequence, value) -> event.set(value);
 
   private final Disruptor<HoodieDisruptorEvent> queue;
   private final Function<I, O> transformFunction;
@@ -83,8 +87,10 @@ public class DisruptorMessageQueue<I, O> implements HoodieMessageQueue<I, O> {
     }
 
     O applied = transformFunction.apply(value);
-    EventTranslator<HoodieDisruptorEvent> translator = (event, sequence) -> event.set(applied);
-    queue.getRingBuffer().publishEvent(translator);
+    @SuppressWarnings("unchecked")
+    EventTranslatorOneArg<HoodieDisruptorEvent, O> translator =
+        (EventTranslatorOneArg<HoodieDisruptorEvent, O>) (EventTranslatorOneArg<?, ?>) EVENT_TRANSLATOR;
+    ringBuffer.publishEvent(translator, applied);
   }
 
   @Override
@@ -145,6 +151,8 @@ public class DisruptorMessageQueue<I, O> implements HoodieMessageQueue<I, O> {
       } catch (Exception e) {
         LOG.error("Failed consuming records", e);
         markAsFailed(e);
+      } finally {
+        event.set(null);  // Clear reference to allow GC of processed record
       }
     });
   }

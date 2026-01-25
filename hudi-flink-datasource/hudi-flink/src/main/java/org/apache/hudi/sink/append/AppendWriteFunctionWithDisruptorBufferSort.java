@@ -28,7 +28,6 @@ import org.apache.hudi.sink.buffer.BufferType;
 import org.apache.hudi.sink.buffer.MemorySegmentPoolFactory;
 import org.apache.hudi.sink.bulk.sort.SortOperatorGen;
 import org.apache.hudi.sink.utils.BufferUtils;
-import org.apache.hudi.util.MutableIteratorWrapperIterator;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.configuration.Configuration;
@@ -42,9 +41,9 @@ import org.apache.flink.table.runtime.operators.sort.BinaryInMemorySortBuffer;
 import org.apache.flink.table.runtime.util.MemorySegmentPool;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.util.Collector;
+import org.apache.flink.util.MutableObjectIterator;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -77,6 +76,8 @@ public class AppendWriteFunctionWithDisruptorBufferSort<T> extends AppendWriteFu
   private transient DisruptorMessageQueue<RowData, RowData> disruptorQueue;
   private transient BinaryInMemorySortBuffer sortBuffer;
   private transient SortingConsumer sortingConsumer;
+  private transient QuickSort quickSort;
+  private transient BinaryRowData reusedRow;
 
   public AppendWriteFunctionWithDisruptorBufferSort(Configuration config, RowType rowType) {
     super(config, rowType);
@@ -98,6 +99,8 @@ public class AppendWriteFunctionWithDisruptorBufferSort<T> extends AppendWriteFu
     this.keyComputer = codeGenerator.generateNormalizedKeyComputer("SortComputer");
     this.recordComparator = codeGenerator.generateRecordComparator("SortComparator");
     this.memorySegmentPool = MemorySegmentPoolFactory.createMemorySegmentPool(config);
+    this.quickSort = new QuickSort();
+    this.reusedRow = new BinaryRowData(rowType.getFieldCount());
 
     initDisruptorBuffer();
 
@@ -180,12 +183,11 @@ public class AppendWriteFunctionWithDisruptorBufferSort<T> extends AppendWriteFu
     if (this.writerHelper == null) {
       initWriterHelper();
     }
-    new QuickSort().sort(buffer);
-    Iterator<BinaryRowData> iterator = new MutableIteratorWrapperIterator<>(
-        buffer.getIterator(),
-        () -> new BinaryRowData(rowType.getFieldCount()));
-    while (iterator.hasNext()) {
-      writerHelper.write(iterator.next());
+    quickSort.sort(buffer);
+    MutableObjectIterator<BinaryRowData> iterator = buffer.getIterator();
+    BinaryRowData row;
+    while ((row = iterator.next(reusedRow)) != null) {
+      writerHelper.write(row);
     }
     buffer.reset();
   }
@@ -195,6 +197,9 @@ public class AppendWriteFunctionWithDisruptorBufferSort<T> extends AppendWriteFu
     try {
       if (disruptorQueue != null) {
         disruptorQueue.close();
+      }
+      if (sortingConsumer != null) {
+        sortingConsumer.finish();
       }
     } finally {
       super.close();

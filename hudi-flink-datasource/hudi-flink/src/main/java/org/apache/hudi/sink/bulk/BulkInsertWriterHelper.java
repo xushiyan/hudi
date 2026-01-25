@@ -180,7 +180,9 @@ public class BulkInsertWriterHelper {
         }, executorService))
         .collect(Collectors.toList())
     ).whenComplete((result, throwable) -> {
-      writeStatusList.addAll(result);
+      if (throwable == null && result != null) {
+        writeStatusList.addAll(result);
+      }
     }).join();
     try {
       executorService.shutdown();
